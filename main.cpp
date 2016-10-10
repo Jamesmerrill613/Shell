@@ -10,6 +10,32 @@
 
 const int MAX_SIZE = 128;
 
+class History
+{
+private:
+	std::vector<std::string> list;
+public:
+	void add(std::string input)
+	{
+		list.push_back(input);
+	};
+	void show()
+	{
+		for (int i = i; i < list.size(); i++)
+			std::cout << i << ") " << list[list.size() - i] << std::endl;
+	};
+	std::string use(int i)
+	{
+		if(i >=  list.size()|| i <= 0)
+		{
+			std::cerr << "No such history exists" << std::endl;
+			return NULL;
+		}
+		else
+			return list[list.size() - i];
+	};
+};
+
 std::string GetInput()
 {
  	std::string input;
@@ -55,31 +81,32 @@ void Parse(std::string input, char* &argc, char**&argv)
 
 int main()
 {
-	//Get INPUT
-	std::cout << "[cmd]: ";
-	std::string input = GetInput();
-	//Parse INPUT
-	char* argc = new char[MAX_SIZE];
-	char**argv = new char*[MAX_SIZE];
-	Parse(input, argc, argv);
+	History history;
+	bool shouldContinue = true;
 
-//	while (true)
-//	{
-//		std::string input = GetInput();
-//		Parse(input);
-//	}
-
-
-/*	while (....)
+	while (shouldContinue)
 	{
 
-		//get input
-		//parse input
-		switch (command)
+		//GET INPUT
+		std::cout << "[cmd]: ";
+		std::string input = GetInput();
+		history.add(input);
+
+		//PARSE INPUT
+		char* argc = new char[MAX_SIZE];
+		char**argv = new char*[MAX_SIZE];
+		Parse(input, argc, argv);
+
+
+		switch (argc)
+		case "history": history.show();
+		case "^":
 		{
-*///		default:
-//      execvp(....);
-//  			auto start = std::chrono::steady_clock::now();
+			// history.add(stoi
+		}
+//{
+		//default:
+  			auto start = std::chrono::steady_clock::now();
 			pid_t pid = fork();
 
 			if (pid == 0)
@@ -97,12 +124,12 @@ int main()
 //				auto stop = std::chrono::steady_clock::now();
 //				ptime += stop - start;
 			}
-//			else
-			//	perror(0); //fork failed
-//		}
-//	}
+			else
+				perror(0); //fork failed
+		//}
+	}
 
-	std::cout << "main is running" << std::endl;
+	history.show();
 	return 0;
-};
+}
 
