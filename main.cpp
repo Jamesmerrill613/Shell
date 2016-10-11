@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -43,40 +42,25 @@ std::string GetInput()
 	return input;
 };
 
-void Parse(std::string input, char* &argc, char**&argv)
+void Parse(std::string input, std::vector<std::string>& argv)
 {
-	argv = new char*[MAX_SIZE];
-	int last = 0;
-	int next = 0;
-	int argCount = 0;
-	while (next < input.length())
-	{
-		next = input.find(' ', last);
-		if (next == -1)
-			next = input.length();
-		if (last < next)
-		{
-			char* word = new char[MAX_SIZE];
-			int j = 0;
-			for (int i = 0; i < next; i++)
-			{
-				word[j] = input[i];
-				j++;
-			}
-			if (argCount == 0)
-			{
-				argc = word;
-				argc[j] = NULL;
-			}
-			argv[argCount] = word;
-			argCount++;
-			last = next + 1;
-		}
-	}
-	argv[argCount] = NULL;
-	//return argv;
-};
+	int pos = input.find(" ");
+	if (pos < 0)
+		pos = input.size();
 
+	if (pos < input.size() && pos > 0)
+	{
+	argv.push_back(input.substr(0,pos));
+	input = input.substr(pos + 1);
+	}
+	else if (pos == 0)
+		input= input.substr(pos + 1);
+	else
+	{
+	argv.push_back(input);
+	input = "";
+	} 
+};
 
 
 int main()
@@ -93,25 +77,27 @@ int main()
 		history.add(input);
 
 		//PARSE INPUT
-		char* argc = new char[MAX_SIZE];
-		char**argv = new char*[MAX_SIZE];
-		Parse(input, argc, argv);
+		std::vector<std::string> args;
+		Parse(input, args);
 
 
-		switch (argc)
-		case "history": history.show();
-		case "^":
+		if (args[0] == "history")
+			history.show();
+		else if (args[0] == "^")
+			history.use(std::stoi(args[1]));
+
+		else
 		{
-			// history.add(stoi
-		}
-//{
-		//default:
+			char** argv = new char*[args.size()+1];
+			for (int i = 0; i < args.size(); i++)
+				argv[i] = const_cast<char*>(args[i].c_str());
+			argv[args.size()] = NULL;
   			auto start = std::chrono::steady_clock::now();
 			pid_t pid = fork();
 
 			if (pid == 0)
 			{
-				execvp(argc, argv);
+				execvp(argv[0], argv);
 				perror("execvp did not run");
 				std::cout << "this is the child process" << std::endl;
 				exit(0);
@@ -121,15 +107,14 @@ int main()
 			{
 				waitpid(pid, NULL, 0);
 				std::cout << "this is the parent process" << std::endl;
-//				auto stop = std::chrono::steady_clock::now();
-//				ptime += stop - start;
+				auto stop = std::chrono::steady_clock::now();
+				//ptime += stop - start;
 			}
 			else
 				perror(0); //fork failed
-		//}
+		}	
 	}
-
-	history.show();
-	return 0;
+	return 0; 
 }
+
 
