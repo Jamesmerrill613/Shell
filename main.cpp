@@ -20,7 +20,7 @@ public:
 	};
 	void show()
 	{
-		for (int i = i; i < list.size(); i++)
+		for (int i = 1; i < list.size() + 1; i++)
 			std::cout << i << ") " << list[list.size() - i] << std::endl;
 	};
 	std::string use(int i)
@@ -33,6 +33,10 @@ public:
 		else
 			return list[list.size() - i];
 	};
+	int size()
+	{
+	return list.size();
+	};
 };
 
 std::string GetInput()
@@ -44,21 +48,27 @@ std::string GetInput()
 
 void Parse(std::string input, std::vector<std::string>& argv)
 {
-	int pos = input.find(" ");
-	if (pos < 0)
-		pos = input.size();
+	argv.clear();
+	int pos = -1;
+	bool shouldContinue = true;
+	while (shouldContinue)
+	{
+		pos = input.find(" ");
+		if (pos < 0)
+			pos = input.size();
 
-	if (pos < input.size() && pos > 0)
-	{
-	argv.push_back(input.substr(0,pos));
-	input = input.substr(pos + 1);
-	}
-	else if (pos == 0)
-		input= input.substr(pos + 1);
-	else
-	{
-	argv.push_back(input);
-	input = "";
+		if (pos < input.size() && pos > 0)
+		{
+		argv.push_back(input.substr(0,pos));
+		input = input.substr(pos + 1);
+		}
+		else if (pos == 0)
+			input= input.substr(pos + 1);
+		else
+		{
+		argv.push_back(input);
+		shouldContinue = false;
+		}
 	} 
 };
 
@@ -80,13 +90,17 @@ int main()
 		std::vector<std::string> args;
 		Parse(input, args);
 
-
+		//CHECK COMMANDS
+		bool shouldFork = true;
+		if (args[0] == "^")
+			Parse(history.use(std::stoi(args[1], nullptr, 10)), args);
 		if (args[0] == "history")
+		{
 			history.show();
-		else if (args[0] == "^")
-			history.use(std::stoi(args[1]));
+			shouldFork = false;
+		}
 
-		else
+		if (shouldFork)
 		{
 			char** argv = new char*[args.size()+1];
 			for (int i = 0; i < args.size(); i++)
@@ -99,16 +113,14 @@ int main()
 			{
 				execvp(argv[0], argv);
 				perror("execvp did not run");
-				std::cout << "this is the child process" << std::endl;
 				exit(0);
 
 			}
 			else if (pid > 0)
 			{
 				waitpid(pid, NULL, 0);
-				std::cout << "this is the parent process" << std::endl;
 				auto stop = std::chrono::steady_clock::now();
-				//ptime += stop - start;
+			//	auto ptime += stop - start;
 			}
 			else
 				perror(0); //fork failed
