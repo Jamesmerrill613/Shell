@@ -20,8 +20,8 @@ public:
 	};
 	void show()
 	{
-		for (int i = 1; i < list.size() + 1; i++)
-			std::cout << i << ") " << list[list.size() - i] << std::endl;
+		for (int i = list.size(); i > 0; i--)
+			std::cout << "   " << i << ") " << list[list.size() - i] << std::endl;
 	};
 	std::string use(int i)
 	{
@@ -35,8 +35,12 @@ public:
 	};
 	int size()
 	{
-	return list.size();
+		return list.size();
 	};
+	void remove()
+	{
+		list.pop_back();
+	}
 };
 
 std::string GetInput()
@@ -69,16 +73,16 @@ void Parse(std::string input, std::vector<std::string>& argv)
 		argv.push_back(input);
 		shouldContinue = false;
 		}
-	} 
+	}
 };
 
 
 int main()
 {
 	History history;
-	bool shouldContinue = true;
+	std::chrono::microseconds ptime = std::chrono::microseconds(0);
 
-	while (shouldContinue)
+	while (true)
 	{
 
 		//GET INPUT
@@ -92,14 +96,25 @@ int main()
 
 		//CHECK COMMANDS
 		bool shouldFork = true;
+		if (args[0] == "exit")
+			return 0;
+		if (args[0] == "ptime")
+		{
+			std::cout << "Time spent executing child process: " << ptime.count() << " microseconds" << std::endl;
+			shouldFork = false;
+		}
 		if (args[0] == "^")
+		{
+			history.remove();
 			Parse(history.use(std::stoi(args[1], nullptr, 10)), args);
+		}
 		if (args[0] == "history")
 		{
 			history.show();
 			shouldFork = false;
 		}
 
+		//FORK
 		if (shouldFork)
 		{
 			char** argv = new char*[args.size()+1];
@@ -109,6 +124,7 @@ int main()
   			auto start = std::chrono::steady_clock::now();
 			pid_t pid = fork();
 
+			//CHILD
 			if (pid == 0)
 			{
 				execvp(argv[0], argv);
@@ -116,15 +132,17 @@ int main()
 				exit(0);
 
 			}
+
+			//PARENT
 			else if (pid > 0)
 			{
 				waitpid(pid, NULL, 0);
 				auto stop = std::chrono::steady_clock::now();
-			//	auto ptime += stop - start;
+				ptime += std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 			}
 			else
 				perror(0); //fork failed
-		}	
+		}
 	}
 	return 0; 
 }
