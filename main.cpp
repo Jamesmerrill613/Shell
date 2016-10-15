@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <cstdio>
 
 const int MAX_SIZE = 128;
 
@@ -156,13 +157,25 @@ int main()
 		Parse_Pipe(input, cmds, infile, outfile);
 
 		//CREATE PIPE
-		int pip[2];
+		int p[2];
 		int test;
-		test = pipe(pip);
+		test = pipe(p);
 		if (test == -1)
 			perror("pipe failed");
 
-
+		//CREATE FILE MARKERS
+		int fin, fout;
+		FILE *FIN, *FOUT;
+		if (infile != "")
+		{
+			FIN = std::fopen(infile.c_str(), "r");
+			fin = fileno(FIN);
+		}
+		if (outfile != "")
+		{		
+			FOUT = std::fopen(outfile.c_str(), "w");
+			fout = fileno(FOUT);
+		}
 		//RUN COMMANDS IN PIPE
 		for (int x = 0; x < cmds.size(); x++) 
 		{
@@ -189,38 +202,49 @@ int main()
 				shouldFork = false;
 			}
 
-		//FORK
-		if (shouldFork)
-		{
-			char** argv = new char*[args.size()+1];
-			for (int i = 0; i < args.size(); i++)
-				argv[i] = const_cast<char*>(args[i].c_str());
-			argv[args.size()] = NULL;
-  			auto start = std::chrono::steady_clock::now();
-			pid_t pid = fork();
-
-			//CHILD
-			if (pid == 0)
+			//FORK
+			if (shouldFork)
 			{
-				execvp(argv[0], argv);
-				perror("execvp did not run");
-				exit(0);
-
+				char** argv = new char*[args.size()+1];
+				for (int i = 0; i < args.size(); i++)
+					argv[i] = const_cast<char*>(args[i].c_str());
+				argv[args.size()] = NULL;
+  				auto start = std::chrono::steady_clock::now();
+				pid_t pid = fork();
+	
+				//CHILD
+				if (pid == 0)
+				{
+					if (x == 0 && infile != "")
+						dup2(fin, 0);
+					if (x == cmds.size() - 1 && outfile != "")
+						dup2(fout, 1);
+					if (x > 0)
+						dup2(p[0], 0);
+					if (x < cmds.size() - 1)
+						dup2(p[1], 1);
+					execvp(argv[0], argv);
+					perror("execvp did not run");
+					exit(0);
+	
+				}
+	
+				//PARENT
+				else if (pid > 0)
+				{
+					waitpid(pid, NULL, 0);
+					auto stop = std::chrono::steady_clock::now();
+					ptime += std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+				}
+				else
+					perror(0); //fork failed
 			}
-
-			//PARENT
-			else if (pid > 0)
-			{
-				waitpid(pid, NULL, 0);
-				auto stop = std::chrono::steady_clock::now();
-				ptime += std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-			}
-			else
-				perror(0); //fork failed
 		}
-	}
+		//CLOSE FILE MARKERS
+		if (infile != "")
+			fclose(FIN);
+		if (outfile != "")
+			fclose(FOUT);
 	}
 	return 0;
-}
-
-
+};
