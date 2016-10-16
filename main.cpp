@@ -216,13 +216,25 @@ int main()
 				if (pid == 0)
 				{
 					if (x == 0 && infile != "")
+					{
 						dup2(fin, 0);
+						close(STDIN);
+					}
 					if (x == cmds.size() - 1 && outfile != "")
+					{
 						dup2(fout, 1);
+						close(STDOUT);
+					}
 					if (x > 0)
+					{
 						dup2(p[0], 0);
+						close(STDIN);
+					}
 					if (x < cmds.size() - 1)
+					{
 						dup2(p[1], 1);
+						close(STDOUT);
+					}
 					execvp(argv[0], argv);
 					perror("execvp did not run");
 					exit(0);
