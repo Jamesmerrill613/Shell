@@ -215,35 +215,97 @@ int main()
 				//CHILD
 				if (pid == 0)
 				{
+					if (x == 0 && x == cmds.size() -1) //only one command
+					{
+						close(p[0]);
+						close(p[1]);
+						if (infile != "")
+						{
+							close(0);
+							dup2(fin, 0);
+						}
+						if (outfile != "")
+						{
+							close(1);
+							dup2(fout, 1);
+						}
+						execvp(argv[0], argv);
+						perror("execvp did not run");
+						exit(0);
+					}
+					else if (x == 0) //x is first command
+					{
+						close(p[0]);
+						if (infile != "")
+						{
+							close(0);
+							dup2(fin, 0);
+						}
+						close(1);
+						dup2(p[1], 1);
+						execvp(argv[0], argv);
+						perror("execvp did not run");
+						exit(0);
+					}
+					else if (x == cmds.size() - 1) //x is last command
+					{
+						close(0);
+						dup2(p[0], 0);
+						if (outfile != "")
+						{
+							close(1);
+							dup2(fout, 0);
+						}
+						execvp(argv[0], argv);
+						perror("execvp did not run");
+						exit(0);
+					}
+					else //x is in the middle
+					{
+						close(0);
+						dup2(p[0], 0);
+						close(1);
+						dup2(p[1], 1);
+						execvp(argv[0], argv);
+						perror("execvp did not run");
+						exit(0);					
+					}					
+
+
+					/*
+
 					if (x == 0 && infile != "")
 					{
 						dup2(fin, 0);
-						close(STDIN);
+						//close(STDIN);
 					}
 					if (x == cmds.size() - 1 && outfile != "")
 					{
 						dup2(fout, 1);
-						close(STDOUT);
+						//close(STDOUT);
 					}
 					if (x > 0)
 					{
 						dup2(p[0], 0);
-						close(STDIN);
+						//close(STDIN);
 					}
 					if (x < cmds.size() - 1)
 					{
 						dup2(p[1], 1);
-						close(STDOUT);
+						//close(STDOUT);
 					}
 					execvp(argv[0], argv);
 					perror("execvp did not run");
 					exit(0);
-	
+					
+					*/
 				}
 	
 				//PARENT
 				else if (pid > 0)
 				{
+					close(p[0]);
+					close(p[1]);
 					waitpid(pid, NULL, 0);
 					auto stop = std::chrono::steady_clock::now();
 					ptime += std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
